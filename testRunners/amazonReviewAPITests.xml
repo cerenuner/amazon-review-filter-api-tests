@@ -1,0 +1,21 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="Amazon Review API tests" parallel="methods" thread-count="1" verbose="1">
+
+    <listeners>
+        <listener class-name="baseSettings.AnnotationTransformer"/>
+    </listeners>
+
+    <test name="Test-SCN-01 Adding Customer Review Test">
+        <classes>
+            <class name="scenarios.customerReviews.AddCustomerReview"/>
+        </classes>
+    </test>
+
+    <test name="Test-SCN-02 Updating Customer Preferences Test">
+        <classes>
+            <class name="scenarios.customerPreferences.UpdateCustomerPreferences"/>
+        </classes>
+    </test>
+
+</suite>

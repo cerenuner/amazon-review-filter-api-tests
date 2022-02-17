@@ -1,0 +1,5 @@
+# IDE and file system
+.idea
+.DS_Store
+target
+test-output/*

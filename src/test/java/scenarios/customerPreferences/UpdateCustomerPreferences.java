@@ -13,8 +13,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.File;
-
 public class UpdateCustomerPreferences extends BaseSettings {
 
     int userId, productId, germanReviewId, englishReviewId, italianReviewId;
@@ -22,7 +20,6 @@ public class UpdateCustomerPreferences extends BaseSettings {
 
     @BeforeMethod
     public void beforeMethod() {
-
         userId = UserOperations.createUserAndReturnUserId(RandomCustomerData.getRandomName(), RandomCustomerData.getRandomCustomerEmail(), "Test@1", Language.EN, Country.DE);
         productId = ProductOperations.createProductAndReturnProductId("Test Product");
         germanReviewId = ReviewOperations.createReviewAndReturnReviewIdWithoutAttachment(userId, productId, ratingGerman, "Test headline German", "besten Testdaten der Welt");
@@ -55,6 +52,56 @@ public class UpdateCustomerPreferences extends BaseSettings {
         Assert.assertEquals(englishReview.get("headLine"), "Test headline English");
         Assert.assertEquals(englishReview.get("review"), "best test data in the world");
         Assert.assertEquals(englishReview.get("rating"), ratingEnglish);
+    }
+
+    @Test(description = "Test-SCN-02 checking if reviews are listed correctly when user updates language")
+    public void reviewsShouldBeListedByUpdatedLanguage() {
+        //Changing user's language
+        UserOperations.updateUserPreferences(userId, Language.IT, Country.DE);
+
+        JsonPath allReviews = ReviewOperations.getAllReviewsByProductId(productId);
+
+        //Asserting English review is not showing to user (requirement: AMZ-CMT-002)
+        Assert.assertNull(allReviews.getJsonObject(String.valueOf(englishReviewId)));
+        Assert.assertNotNull(allReviews.getJsonObject(String.valueOf(germanReviewId)));
+        Assert.assertNotNull(allReviews.getJsonObject(String.valueOf(italianReviewId)));
+
+        //Asserting product rating
+        Assert.assertEquals(ReviewOperations.getReviewRatingByProductId(productId), (ratingEnglish + ratingGerman + ratingItalian) / 3);
+
+        JSONObject germanReview = allReviews.getJsonObject(String.valueOf(germanReviewId));
+        JSONObject italianReview = allReviews.getJsonObject(String.valueOf(italianReviewId));
+
+        //Asserting review data
+        Assert.assertEquals(germanReview.get("headLine"), "Test headline German");
+        Assert.assertEquals(germanReview.get("review"), "besten Testdaten der Welt");
+        Assert.assertEquals(germanReview.get("rating"), ratingGerman);
+        Assert.assertEquals(italianReview.get("headLine"), "Test headline Italian");
+        Assert.assertEquals(italianReview.get("review"), "i migliori dati di test al mondo");
+        Assert.assertEquals(italianReview.get("rating"), ratingItalian);
+    }
+
+    @Test(description = "Test-SCN-02 checking if reviews are listed correctly when user updates language")
+    public void reviewsShouldBeListedBySameLanguageAndCountryPreferences() {
+        //Setting same language and country
+        UserOperations.updateUserPreferences(userId, Language.DE, Country.DE);
+
+        JsonPath allReviews = ReviewOperations.getAllReviewsByProductId(productId);
+
+        //Asserting italian and English reviews are not showing to user (requirement: AMZ-CMT-002)
+        Assert.assertNotNull(allReviews.getJsonObject(String.valueOf(germanReviewId)));
+        Assert.assertNull(allReviews.getJsonObject(String.valueOf(englishReviewId)));
+        Assert.assertNull(allReviews.getJsonObject(String.valueOf(italianReviewId)));
+
+        //Asserting product rating
+        Assert.assertEquals(ReviewOperations.getReviewRatingByProductId(productId), (ratingEnglish + ratingGerman + ratingItalian) / 3);
+
+        JSONObject germanReview = allReviews.getJsonObject(String.valueOf(germanReviewId));
+
+        //Asserting review data
+        Assert.assertEquals(germanReview.get("headLine"), "Test headline German");
+        Assert.assertEquals(germanReview.get("review"), "besten Testdaten der Welt");
+        Assert.assertEquals(germanReview.get("rating"), ratingGerman);
     }
 
     @Test(description = "Test-SCN-02 checking if reviews are filtered as user's updated preferences")
